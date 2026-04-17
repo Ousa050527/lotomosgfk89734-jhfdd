@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ហ្គេមឡូតូស្ដង់ដារ</title>
+    <style>
+        body { font-family: 'Khmer OS Battambang', sans-serif; background: #f0f2f5; text-align: center; padding: 10px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        
+        /* ផ្នែកមេហៅលេខ */
+        .caller-section { background: #1a2a6c; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        #currentNum { font-size: 80px; font-weight: bold; color: #f1c40f; line-height: 1; margin: 10px 0; display: block; }
+        
+        /* តារាងសន្លឹកឡូតូ */
+        .lotto-card { display: grid; grid-template-columns: repeat(9, 1fr); border: 2px solid #333; background: #fff; margin-bottom: 15px; }
+        .cell { 
+            aspect-ratio: 1/1; border: 1px solid #ccc; display: flex; 
+            align-items: center; justify-content: center; 
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; user-select: none;
+        }
+        .cell.empty { background: #eee; }
+        .cell.marked { background: #27ae60 !important; color: white; border-radius: 50%; transform: scale(0.8); }
+
+        /* ប៊ូតុង */
+        button { padding: 12px 20px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; margin: 5px; transition: 0.2s; }
+        .btn-draw { background: #e74c3c; color: white; width: 100%; font-size: 22px; }
+        .btn-reset { background: #7f8c8d; color: white; }
+        .btn-new { background: #2ecc71; color: white; }
+        
+        .log-box { font-size: 13px; background: #eee; padding: 10px; border-radius: 5px; color: #333; height: 50px; overflow-y: auto; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="caller-section">
+        <h2 style="margin:0;">មេហៅលេខ</h2>
+        <span id="currentNum">--</span>
+        <button class="btn-draw" onclick="draw()">ចាប់លេខ</button>
+        <button class="btn-reset" onclick="initGame()">លេងថ្មី</button>
+        <div class="log-box">លេខចេញរួច៖ <span id="log">-</span></div>
+    </div>
+
+    <h3>សន្លឹករបស់អ្នក</h3>
+    <div id="lottoGrid" class="lotto-card"></div>
+    <button class="btn-new" onclick="generateNewCard()">ប្តូរសន្លឹកបៀ</button>
+</div>
+
+<script>
+    let pool = [];
+    let history = [];
+
+    // ចាប់ផ្តើមហ្គេមដំបូង
+    function initGame() {
+        pool = Array.from({length: 90}, (_, i) => i + 1);
+        history = [];
+        document.getElementById('currentNum').innerText = "--";
+        document.getElementById('log').innerText = "-";
+        generateNewCard();
+    }
+
+    // ចាប់លេខម្តងមួយៗ
+    function draw() {
+        if (pool.length === 0) { alert("អស់លេខហើយ!"); return; }
+        let idx = Math.floor(Math.random() * pool.length);
+        let num = pool.splice(idx, 1)[0];
+        document.getElementById('currentNum').innerText = num;
+        history.push(num);
+        document.getElementById('log').innerText = history.join(", ");
+    }
+
+    // បង្កើតសន្លឹកបៀ ៩ ជួរដេក ៩ ជួរឈរ តាមបច្ចេកទេសឡូតូ
+    function generateNewCard() {
+        const grid = document.getElementById('lottoGrid');
+        grid.innerHTML = '';
+        
+        // បង្កើតលេខក្នុងជួរឈរនីមួយៗ (ជួរទី១: 1-9, ទី២: 10-19...)
+        let columns = Array.from({length: 9}, (_, i) => {
+            let start = i * 10 + (i === 0 ? 1 : 0);
+            let end = i * 10 + 9 + (i === 8 ? 1 : 0);
+            let nums = [];
+            for (let n = start; n <= end; n++) nums.push(n);
+            return nums.sort(() => Math.random() - 0.5).slice(0, 5).sort((a,b) => a-b);
+        });
+
+        // បង្កើត Grid 9x9
+        let matrix = Array.from({length: 9}, () => Array(9).fill(null));
+        for (let col = 0; col < 9; col++) {
+            let rows = [0,1,2,3,4,5,6,7,8].sort(() => Math.random() - 0.5).slice(0, 5);
+            rows.forEach((row, idx) => {
+                matrix[row][col] = columns[col][idx];
+            });
+        }
+
+        // បង្ហាញក្នុង HTML
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell' + (matrix[r][c] === null ? ' empty' : '');
+                cell.innerText = matrix[r][c] || '';
+                if (matrix[r][c]) {
+                    cell.onclick = function() { this.classList.toggle('marked'); };
+                }
+                grid.appendChild(cell);
+            }
+        }
+    }
+
+    initGame();
+</script>
+
+</body>
+</html>

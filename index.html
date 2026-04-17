@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឡូតូស្ដង់ដារ - ឃើញលេខច្បាស់</title>
+    <style>
+        body { font-family: 'Khmer OS Battambang', sans-serif; background: #1a2a6c; text-align: center; padding: 20px; color: white; }
+        .container { max-width: 600px; margin: auto; background: #2c3e50; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        /* ផ្នែកមេហៅលេខ */
+        .caller-box { background: #0f2027; padding: 20px; border-radius: 10px; border: 2px solid #feca57; margin-bottom: 20px; }
+        #currentNum { font-size: 100px; font-weight: bold; color: #feca57; display: block; line-height: 1; margin: 10px 0; }
+        
+        /* ប្រអប់បង្ហាញលេខចេញរួច */
+        .history-panel { background: #fff; color: #333; border-radius: 8px; padding: 15px; text-align: left; margin-top: 15px; min-height: 60px; }
+        .history-label { font-weight: bold; color: #1e3799; display: block; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
+        #historyList { font-size: 16px; word-break: break-all; color: #d35400; font-weight: bold; }
+
+        /* ប៊ូតុង */
+        button { padding: 15px; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+        .btn-draw { background: #eb2f06; color: white; width: 100%; font-size: 24px; margin-bottom: 10px; }
+        .btn-draw:active { transform: scale(0.98); }
+        .btn-new { background: #27ae60; color: white; width: 100%; }
+        .btn-reset { background: #7f8c8d; color: white; font-size: 12px; margin-top: 10px; }
+
+        /* តារាងសន្លឹកបៀ */
+        .lotto-card { display: grid; grid-template-columns: repeat(9, 1fr); border: 2px solid #fff; background: #fff; margin-top: 20px; color: #333; }
+        .cell { aspect-ratio: 1/1; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        .cell.empty { background: #e0e0e0; }
+        .cell.marked { background: #27ae60 !important; color: white; border-radius: 50%; transform: scale(0.8); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="caller-box">
+        <div style="font-size: 20px;">មេហៅលេខ</div>
+        <span id="currentNum">--</span>
+        <button class="btn-draw" onclick="drawNumber()">ចាប់លេខ</button>
+        
+        <div class="history-panel">
+            <span class="history-label">លេខចេញរួច៖</span>
+            <div id="historyList"></div>
+        </div>
+        <button class="btn-reset" onclick="clearHistory()">Reset លេខចាស់ចោល</button>
+    </div>
+
+    <div id="cardGrid" class="lotto-card"></div>
+    <div style="margin-top: 15px;">
+        <button class="btn-new" onclick="createNewCard()">ប្តូរសន្លឹកបៀថ្មី</button>
+    </div>
+</div>
+
+<script>
+    // រក្សាទុកលេខដែលចេញរួចក្នុង LocalStorage
+    let drawnNumbers = JSON.parse(localStorage.getItem('lotto_history')) || [];
+
+    function updateUI() {
+        const historyDiv = document.getElementById('historyList');
+        const currentDisplay = document.getElementById('currentNum');
+
+        if (drawnNumbers.length > 0) {
+            currentDisplay.innerText = drawnNumbers[drawnNumbers.length - 1];
+            historyDiv.innerText = drawnNumbers.join(', ');
+        } else {
+            currentDisplay.innerText = '--';
+            historyDiv.innerText = 'មិនទាន់មាន...';
+        }
+    }
+
+    function drawNumber() {
+        if (drawnNumbers.length >= 90) return alert("អស់លេខហើយ!");
+        let n;
+        do { n = Math.floor(Math.random() * 90) + 1; } while (drawnNumbers.includes(n));
+        drawnNumbers.push(n);
+        localStorage.setItem('lotto_history', JSON.stringify(drawnNumbers));
+        updateUI();
+    }
+
+    function clearHistory() {
+        if (confirm("លុបប្រវត្តិលេខដែលចេញរួចមែនទេ?")) {
+            drawnNumbers = [];
+            localStorage.removeItem('lotto_history');
+            updateUI();
+        }
+    }
+
+    function createNewCard() {
+        const grid = document.getElementById('cardGrid');
+        grid.innerHTML = '';
+        
+        // លំនាំ ៥ លេខក្នុងមួយជួរ (ដេក និង ឈរ)
+        const patterns = [
+            [1,1,1,1,1,0,0,0,0], [1,1,0,0,0,1,1,1,0], [0,0,1,1,1,0,0,1,1],
+            [1,0,1,1,0,1,0,0,1], [0,1,0,0,1,1,1,1,0], [1,1,0,1,0,0,1,0,1],
+            [0,0,1,0,1,1,0,1,1], [1,0,1,0,1,0,1,1,0], [0,1,0,1,0,1,1,0,1]
+        ];
+        
+        let rOrder = [...Array(9).keys()].sort(() => Math.random() - 0.5);
+        let cOrder = [...Array(9).keys()].sort(() => Math.random() - 0.5);
+
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell';
+                let colIdx = cOrder[c];
+                
+                if (patterns[rOrder[r]][colIdx] === 1) {
+                    let min = colIdx * 10 + (colIdx === 0 ? 1 : 0);
+                    let max = colIdx * 10 + 9 + (colIdx === 8 ? 1 : 0);
+                    let val = Math.floor(Math.random() * (max - min + 1)) + min;
+                    cell.innerText = val; // បង្ហាញលេខនៅទីនេះ
+                    cell.onclick = function() { this.classList.toggle('marked'); };
+                } else {
+                    cell.classList.add('empty');
+                }
+                grid.appendChild(cell);
+            }
+        }
+    }
+
+    // ដំណើរការពេលបើកដំបូង
+    updateUI();
+    createNewCard();
+</script>
+
+</body>
+</html>
